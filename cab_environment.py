@@ -7,21 +7,23 @@ from itertools import product
 
 
 class CabDriverEnvironment:
-    def __init__(self):
-        self.hyperparameters = self.initialize_hyperparameters()
+    def __init__(self, locations=5, cost=5, reward=9):
+        self.hyperparameters = self.initialize_hyperparameters(locations, cost, reward)
         self.action_space = self.initialize_action_space()
         self.state_space = self.initialize_state_space()
         self.state_init = self.set_init_state()
 
-        self.reset()
+        self.reset_state()
 
-    def initialize_hyperparameters(self):
+    ## Initialize environment hyperparameters, total action space and total state space
+
+    def initialize_hyperparameters(self, locations, cost, reward):
         return {
-            "m": 5,  # number of cities, ranges from 1 ...... m
+            "m": locations,  # number of cities, ranges from 1 ...... m
             "t": 24,  # number of hours, ranges from 0 ....... t-1
             "d": 7,  # number of days, ranges from 0 ... d-1
-            "C": 5,  # per hour fuel and other costs
-            "R": 9,  # per hour revenue from a passanger
+            "C": cost,  # per hour fuel and other costs
+            "R": reward,  # per hour revenue from a passanger
         }
 
     def initialize_action_space(self) -> list:
@@ -60,6 +62,8 @@ class CabDriverEnvironment:
         # convert product object into a list
         return list(total_state_space)
 
+    ## Set / Reset initial cab state
+
     def set_init_state(self):
         """ Select a random state for a cab to start
         """
@@ -74,5 +78,5 @@ class CabDriverEnvironment:
 
         return (random_location, current_day, current_hour)
 
-    def reset(self):
+    def reset_state(self):
         return self.action_space, self.state_space, self.state_init
