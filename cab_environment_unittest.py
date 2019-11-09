@@ -24,6 +24,19 @@ class CabDriverEnvironmentTest(unittest.TestCase):
 
         self.assertEqual(len(estimated_state_space), 3 * 7 * 24)
 
+    def test_requests_per_location(self):
+        (
+            allowed_action_index,
+            allowed_actions,
+        ) = self.cabDriverEnvironment.get_requests_per_location(
+            self.cabDriverEnvironment.state_init
+        )
+
+        total_requests = len(allowed_action_index)
+        self.assertEqual(total_requests, len(allowed_actions) - 1)
+
+        self.assertEqual(allowed_actions[len(allowed_actions) - 1], (0, 0))
+
 
 if __name__ == "__main__":
     unittest.main()

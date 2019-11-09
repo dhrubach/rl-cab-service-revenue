@@ -80,3 +80,36 @@ class CabDriverEnvironment:
 
     def reset_state(self):
         return self.action_space, self.state_space, self.state_init
+
+    ## Action space at a given location
+
+    def get_requests_per_location(self, current_state):
+        """ Number of requests which a driver can receive at a particular location is 
+        pre-defined by a Poisson Distribution. 
+        
+        Given a current state and distribution, calculate possible requests i.e. action_space
+        of a cab
+        """
+
+        current_location = current_state[0]
+        distribution_lambda = [2, 12, 4, 7, 8]
+
+        total_possible_requests = np.random.poisson(
+            distribution_lambda[current_location - 1]
+        )
+
+        # limit maximum possible requests routed to a cab to 15
+        if total_possible_requests > 15:
+            total_possible_requests = 15
+
+        # select a random sample of requests from the total action space
+        # remove no - ride option
+        total_action_space = self.action_space[:-1]
+        allowed_action_index = np.random.choice(
+            range(len(total_action_space)), total_possible_requests
+        )
+        allowed_actions = [total_action_space[i] for i in allowed_action_index]
+
+        allowed_actions.append((0, 0))
+
+        return allowed_action_index, allowed_actions
