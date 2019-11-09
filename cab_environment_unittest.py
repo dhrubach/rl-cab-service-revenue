@@ -72,6 +72,8 @@ class CabDriverEnvironmentTest(unittest.TestCase):
         (
             total_trip_time,
             travel_time_to_customer,
+            _,
+            _,
         ) = self.cabDriverEnvironment.get_different_pickup_time(
             current_state, current_action
         )
@@ -161,6 +163,61 @@ class CabDriverEnvironmentTest(unittest.TestCase):
                 current_state, current_action
             ),
         )
+
+    def test_next_step(self):
+        # scenario 1 : no ride
+        current_state = (1, 8, 1)
+        current_action = (0, 0)
+
+        expected_next_state = (1, 9, 1)
+        expected_reward = -5
+        expected_total_trip_time = 1
+
+        (
+            next_state,
+            total_rewards,
+            total_ride_time,
+        ) = self.cabDriverEnvironment.get_next_state(current_state, current_action)
+
+        self.assertEqual(expected_next_state, next_state)
+        self.assertEqual(expected_reward, total_rewards)
+        self.assertEqual(expected_total_trip_time, total_ride_time)
+
+        # scenario 2 : current location same as pickup location
+        current_state = (1, 8, 1)
+        current_action = (1, 3)
+
+        expected_next_state = (3, 14, 1)
+        expected_reward = 24
+        expected_total_trip_time = 6
+
+        (
+            next_state,
+            total_rewards,
+            total_ride_time,
+        ) = self.cabDriverEnvironment.get_next_state(current_state, current_action)
+
+        self.assertEqual(expected_next_state, next_state)
+        self.assertEqual(expected_reward, total_rewards)
+        self.assertEqual(expected_total_trip_time, total_ride_time)
+
+        # scenario 3 : current location different from pickup location
+        current_state = (1, 19, 2)
+        current_action = (2, 3)
+
+        expected_next_state = (3, 8, 3)
+        expected_reward = -2
+        expected_total_trip_time = 13
+
+        (
+            next_state,
+            total_rewards,
+            total_ride_time,
+        ) = self.cabDriverEnvironment.get_next_state(current_state, current_action)
+
+        self.assertEqual(expected_next_state, next_state)
+        self.assertEqual(expected_reward, total_rewards)
+        self.assertEqual(expected_total_trip_time, total_ride_time)
 
 
 if __name__ == "__main__":

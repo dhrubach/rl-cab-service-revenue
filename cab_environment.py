@@ -116,6 +116,66 @@ class CabDriverEnvironment:
 
         return allowed_action_index, allowed_actions
 
+    ## Execute Step
+
+    def get_next_state(self, state, action):
+        """ Calculate next state, reward and total ride time for a given
+            state and action
+        """
+        current_location, current_hour, current_day = state
+        location_from, location_to = action
+
+        next_state = state
+
+        total_rewards = self.get_rewards_per_ride(state, action)
+        total_ride_time = 0
+
+        if action == (0, 0):
+            # no ride action
+            # increase current hour by 1
+            current_hour = int(current_hour + 1)
+            current_hour, current_day = self.calc_revised_time_day(
+                current_hour, current_day
+            )
+
+            total_ride_time = 1
+            next_state = (current_location, current_hour, current_day)
+        else:
+            if current_location == location_from:
+                total_trip_time, travel_time_to_customer = self.get_same_pickup_time(
+                    state, action
+                )
+
+                # calculate time at the end of the trip
+                time_at_trip_end = int(current_hour + total_trip_time)
+                # factor next day if time exceeds 23:00 hours
+                time_at_trip_end, day_at_trip_end = self.calc_revised_time_day(
+                    time_at_trip_end, current_day
+                )
+
+                total_ride_time = total_trip_time
+                next_state = (location_to, time_at_trip_end, day_at_trip_end)
+            else:
+                (
+                    total_trip_time,
+                    travel_time_to_customer,
+                    time_at_customer_location,
+                    day_at_customer_location,
+                ) = self.get_different_pickup_time(state, action)
+
+                # calculate time at the end of the trip
+                # use the computed time at customer location instead of current hour
+                time_at_trip_end = int(time_at_customer_location + total_trip_time)
+                # factor next day if time exceeds 23:00 hours
+                (time_at_trip_end, day_at_trip_end) = self.calc_revised_time_day(
+                    time_at_trip_end, day_at_customer_location
+                )
+
+                total_ride_time = total_trip_time + travel_time_to_customer
+                next_state = (location_to, time_at_trip_end, day_at_trip_end)
+
+        return next_state, total_rewards, total_ride_time
+
     ## Reward Calculations
 
     def get_rewards_per_ride(self, state, action):
@@ -146,6 +206,8 @@ class CabDriverEnvironment:
                 (
                     total_trip_time,
                     travel_time_to_customer,
+                    _,
+                    _,
                 ) = self.get_different_pickup_time(state, action)
 
             # fmt:off
@@ -212,7 +274,14 @@ class CabDriverEnvironment:
             )
         # fmt:on
 
-        return total_trip_time, travel_time_to_customer
+        return (
+            total_trip_time,
+            travel_time_to_customer,
+            time_at_customer_location,
+            day_at_customer_location,
+        )
+
+    ## Utility function
 
     def calc_revised_time_day(self, time_of_day, day_of_week):
         if time_of_day >= 24:
