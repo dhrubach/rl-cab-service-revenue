@@ -83,6 +83,34 @@ class CabDriverEnvironment:
     def reset_state(self):
         return self.action_space, self.state_space, self.state_init
 
+    ## Encoding state (or state-action) for NN input
+
+    def state_encod_arch1(self, state):
+        """ Convert the state into a vector so that it can be fed to the NN. 
+            This method converts a given state into a vector format. The vector is of size m + t + d.
+        """
+
+        all_locations = np.zeros(self.hyperparameters["m"])
+        hours_in_a_day = np.zeros(self.hyperparameters["t"])
+        days_in_a_week = np.zeros(self.hyperparameters["d"])
+
+        current_location, current_hour, current_day = state
+
+        all_locations[current_location - 1] = 1
+        hours_in_a_day[current_hour] = 1
+        days_in_a_week[current_day] = 1
+
+        encoded_state = np.hstack(
+            (all_locations, hours_in_a_day, days_in_a_week)
+        ).reshape(
+            1,
+            self.hyperparameters["m"]
+            + self.hyperparameters["t"]
+            + self.hyperparameters["d"],
+        )
+
+        return encoded_state
+
     ## Action space at a given location
 
     def get_requests_per_location(self, current_state):
