@@ -196,12 +196,12 @@ class CabDriverEnvironment:
         time_at_customer_location = int(current_hour + travel_time_to_customer)
         day_at_customer_location = current_day
 
-        if time_at_customer_location >= 24:
-            time_at_customer_location = int(time_at_customer_location - 24)
-            if current_day == 6:
-                day_at_customer_location = 0
-            else:
-                day_at_customer_location = int(day_at_customer_location + 1)
+        (
+            time_at_customer_location,
+            day_at_customer_location,
+        ) = self.calc_revised_time_day(
+            time_at_customer_location, day_at_customer_location
+        )
 
         # fmt:off
         total_trip_time = (self.time_matrix
@@ -213,4 +213,14 @@ class CabDriverEnvironment:
         # fmt:on
 
         return total_trip_time, travel_time_to_customer
+
+    def calc_revised_time_day(self, time_of_day, day_of_week):
+        if time_of_day >= 24:
+            time_of_day = int(time_of_day - 24)
+            if day_of_week == 6:
+                day_of_week = 0
+            else:
+                day_of_week = int(day_of_week + 1)
+
+        return time_of_day, day_of_week
 
