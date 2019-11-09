@@ -37,6 +37,131 @@ class CabDriverEnvironmentTest(unittest.TestCase):
 
         self.assertEqual(allowed_actions[len(allowed_actions) - 1], (0, 0))
 
+    def test_ride_time_same_pickup_location(self):
+        current_day = 2  # Tuesday
+        current_hour = 13  # 1 PM
+        current_state = (1, 13, 2)
+
+        # request to travel from location 1 to location 4
+        current_action = (1, 4)
+
+        # fmt:off
+        # time matrix is zero indexed. 
+        total_ride_time_from_matrix = (self.cabDriverEnvironment.time_matrix
+            [current_action[0] - 1]
+            [current_action[1] - 1]
+            [current_hour]
+            [current_day]
+            )
+        # fmt: on
+
+        total_ride_time_from_env = self.cabDriverEnvironment.get_same_pickup_time(
+            current_state, current_action
+        )
+
+        self.assertEqual(total_ride_time_from_matrix, total_ride_time_from_env[0])
+
+    def test_ride_time_diff_pickup_location(self):
+        current_day = 1  # Monday
+        current_hour = 17  # 5 PM
+        current_state = (3, 17, 1)
+
+        # request to travel from location 1 to location 4
+        current_action = (1, 4)
+
+        (
+            total_trip_time,
+            travel_time_to_customer,
+        ) = self.cabDriverEnvironment.get_different_pickup_time(
+            current_state, current_action
+        )
+
+        # fmt:off
+        # time matrix is zero indexed. 
+        time_to_customer_from_matrix = (self.cabDriverEnvironment.time_matrix
+            [current_state[0] - 1]
+            [current_action[0] - 1]
+            [current_hour]
+            [current_day]
+            )
+        # fmt: on
+
+        self.assertEqual(time_to_customer_from_matrix, travel_time_to_customer)
+
+        # fmt:off
+        # time matrix is zero indexed. 
+        ride_time_from_matrix = (self.cabDriverEnvironment.time_matrix
+            [current_action[0] - 1]
+            [current_action[1] - 1]
+            [current_hour]
+            [current_day]
+            )
+        # fmt: on
+
+        self.assertEqual(ride_time_from_matrix, total_trip_time)
+
+    def test_calculate_rewards(self):
+        # current location same as pickup location
+        current_state = (1, 8, 1)
+        current_action = (1, 3)
+
+        # fmt:off
+        ride_time_from_matrix = (self.cabDriverEnvironment.time_matrix
+            [current_action[0] - 1]
+            [current_action[1] - 1]
+            [current_state[1]]
+            [current_state[2]]
+            )
+        # fmt: on
+
+        reward_factor = self.cabDriverEnvironment.hyperparameters["R"]
+        cost_factor = self.cabDriverEnvironment.hyperparameters["C"]
+
+        manual_reward = (reward_factor * ride_time_from_matrix) - (
+            cost_factor * ride_time_from_matrix
+        )
+
+        self.assertEqual(
+            manual_reward,
+            self.cabDriverEnvironment.get_rewards_per_ride(
+                current_state, current_action
+            ),
+        )
+
+        # current location different from pickup location
+        current_state = (1, 8, 1)
+        current_action = (2, 3)
+
+        # fmt:off
+        time_to_customer_from_matrix = (self.cabDriverEnvironment.time_matrix
+            [current_state[0] - 1]
+            [current_action[0] - 1]
+            [current_state[1]]
+            [current_state[2]]
+            )
+
+        time_at_customer_location = int(current_state[1] + time_to_customer_from_matrix)
+        day_at_customer_location = current_state[2]
+
+        ride_time_from_matrix = (self.cabDriverEnvironment.time_matrix
+            [current_action[0] - 1]
+            [current_action[1] - 1]
+            [time_at_customer_location]
+            [day_at_customer_location]
+            )
+        # fmt: on
+
+        manual_reward = (reward_factor * ride_time_from_matrix) - (
+            cost_factor * (ride_time_from_matrix + time_to_customer_from_matrix)
+        )
+
+        self.assertEqual(
+            manual_reward,
+            self.cabDriverEnvironment.get_rewards_per_ride(
+                current_state, current_action
+            ),
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
