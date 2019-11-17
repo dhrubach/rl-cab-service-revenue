@@ -135,12 +135,17 @@ class CabDriverEnvironment:
         # select a random sample of requests from the total action space
         # remove no - ride option
         total_action_space = self.action_space[:-1]
-        allowed_action_index = np.random.choice(
+        allowed_action_index = random.sample(
             range(len(total_action_space)), total_possible_requests
         )
         allowed_actions = [total_action_space[i] for i in allowed_action_index]
 
         allowed_actions.append((0, 0))
+
+        if len(allowed_action_index) == 0:
+            allowed_action_index = [0]
+        else:            
+            allowed_action_index.append(len(allowed_action_index))
 
         return allowed_action_index, allowed_actions
 
